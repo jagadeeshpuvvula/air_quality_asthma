@@ -1,0 +1,130 @@
+---
+title: "AQ_compound_exposure"
+author: "Puvvula"
+date: "10/6/2021"
+output: pdf_document
+---
+
+```{r}
+#load libraries
+library(tidyverse)
+library(lubridate)
+library(gridExtra)
+library(lemon)
+```
+
+
+```{r}
+#load raw data and formatting
+climate<- read_csv("/work/jessebell/puvvula/aqd_raw/climate_data.csv")
+cri_poll<- read_csv("/work/jessebell/puvvula/aqd_raw/criteria_pollut.csv")
+cri_poll_sel<- cri_poll %>% select(date,acres,pres_burn,Co_1Hr_Max,
+                                   Max_Sol_Rad, No_Max, Noy_Max,
+                                   Noyno_Max,Ozone_1Hr_Max, 
+                                   Pm1025Lc_Max, pm25_Max, 
+                                   so2_1hr_max, so2_5min_max)
+pollen<- read_csv("/work/jessebell/puvvula/aqd_raw/pollen_for_analysis.csv")
+asthma<- read_csv("/work/jessebell/puvvula/aqd_raw/health_data.csv")
+
+climate$date<-as.Date(climate$date, format = "%m/%d/%Y")
+cri_poll_sel$date<-as.Date(cri_poll_sel$date, format = "%m/%d/%Y")
+pollen$date<-as.Date(pollen$date, format = "%m/%d/%Y")
+asthma$date<-as.Date(asthma$date, format = "%m/%d/%Y")
+
+#join data by date
+dat<- left_join(cri_poll_sel, climate, by='date') %>%
+  left_join(.,pollen, by='date') %>%
+  left_join(.,asthma, by='date')
+
+```
+
+
+```{r}
+#visualize missing data
+
+missing.values <- dat %>%
+  gather(key = "key", value = "val") %>%
+  mutate(isna = is.na(val)) %>%
+  group_by(key) %>%
+  mutate(total = n()) %>%
+  group_by(key, total, isna) %>%
+  summarise(num.isna = n()) %>%
+  mutate(pct = num.isna / total * 100)
+levels <- (missing.values  %>% filter(isna == T) %>%     
+           arrange(desc(pct)))$key
+percentage.plot <- missing.values %>%
+      ggplot() +
+        geom_bar(aes(x = reorder(key, desc(pct)), 
+                     y = pct, fill=isna), 
+                  stat = 'identity', alpha=0.8) +
+        scale_x_discrete(limits = levels) +
+        scale_fill_manual(name = "", 
+                          values = c('steelblue', 'tomato3'), 
+                          labels = c("Present", "Missing")) +
+        coord_flip() +
+        labs(title = "Percentage of missing values", 
+             x = 'Variable', y = "% of missing values")
+percentage.plot
+
+#######################################
+#### ROW PLOT ###################
+# provides detailed view
+row.plot <- dat %>%
+  mutate(id = row_number()) %>%
+  gather(-id, key = "key", value = "val") %>%
+  mutate(isna = is.na(val)) %>%
+  ggplot(aes(key, id, fill = isna)) +
+    geom_raster(alpha=0.8) +
+    scale_fill_manual(name = "",
+        values = c('steelblue', 'tomato3'),
+        labels = c("Present", "Missing")) +
+    scale_x_discrete(limits = levels) +
+    labs(x = "Variable",
+           y = "Row Number", title = "Missing values in rows") +
+    coord_flip()
+row.plot
+
+
+grid_arrange_shared_legend(percentage.plot,row.plot)
+```
+
+```{r}
+# Data imputation - TBD
+library(pcaMethods)
+
+pc <- pca(dat, method="ppca")
+pca_imputed <- completeObs(pc)
+
+write.csv(pca_imputed, "/work/jessebell/puvvula/aqd_raw/pca_imputed.csv", 
+          row.names = T)
+
+```
+
+```{r}
+#add row index to original data
+dat$row_id<- seq.int(nrow(dat))
+#select date and append date to imputed dataset
+date_join<- dat %>% select(row_id, date)
+imp_dat<- read_csv("/work/jessebell/puvvula/aqd_raw/pca_imputed.csv")
+
+#imputed data with date variable
+merged_data<- left_join(imp_dat,date_join, by="row_id")
+
+write.csv(merged_data, "/work/jessebell/puvvula/aqd_raw/final_imputed.csv", 
+          row.names = F)
+
+```
+
+Start analysis here
+
+```{r}
+#working with imputed dataset
+
+dat<- read_csv("/work/jessebell/puvvula/aqd_raw/final_imputed.csv")
+
+
+
+
+
+```
+
