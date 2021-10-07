@@ -1,5 +1,5 @@
 ---
-title: "pollen_validation"
+title: "Comparing pollen data from Bellevue and UNMC station"
 author: "Puvvula"
 date: "10/6/2021"
 output: pdf_document
