@@ -1,0 +1,57 @@
+---
+title: "pollen_validation"
+author: "Puvvula"
+date: "10/6/2021"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(gridExtra)
+
+dat<- read_csv("/work/jessebell/puvvula/aqd_raw/pollen_comparision.csv")
+dat$unmc_total<-dat$unmc_tree+dat$unmc_grass+dat$unmc_weed
+dat$bell_total<- dat$bell_tree+dat$bell_grass+dat$bell_weed
+
+#estimating correlation coefficients 
+cor(dat$bell_total,dat$unmc_total, method = "pearson", use = "complete.obs")
+
+
+p1<- ggplot(dat, aes(x=unmc_grass, y=bell_grass))+geom_point()+
+  geom_smooth(method = lm)+ 
+  scale_x_continuous("UNMC monitor", limits = c(0,125))+
+  scale_y_continuous("Bellevue monitor", limits = c(0,125))+
+  ggtitle("Grass") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  annotate("text",x=100,y=125,label="Pearson coef = 57.4%")
+
+
+p2<- ggplot(dat, aes(x=unmc_tree, y=bell_tree))+geom_point()+
+  geom_smooth(method = lm)+ 
+  scale_x_continuous("UNMC monitor", limits = c(0,3500))+
+  scale_y_continuous("Bellevue monitor", limits = c(0,3500))+
+  ggtitle("Tree") +
+  theme(plot.title = element_text(hjust = 0.5))+
+    annotate("text",x=2750,y=3500,label="Pearson coef = 12.2%")
+
+p3<- ggplot(dat, aes(x=unmc_weed, y=bell_weed))+geom_point()+
+  geom_smooth(method = lm)+ 
+  scale_x_continuous("UNMC monitor", limits = c(0,1500))+
+  scale_y_continuous("Bellevue monitor", limits = c(0,1500))+
+  ggtitle("Weed") +
+  theme(plot.title = element_text(hjust = 0.5))+
+    annotate("text",x=1200,y=1500,label="Pearson coef = 85.7%")
+
+p4<- ggplot(dat, aes(x=unmc_total, y=bell_total))+geom_point()+
+  geom_smooth(method = lm)+ 
+  scale_x_continuous("UNMC monitor", limits = c(0,3500))+
+  scale_y_continuous("Bellevue monitor", limits = c(0,3500))+
+  ggtitle("Total pollen") +
+  theme(plot.title = element_text(hjust = 0.5))+
+    annotate("text",x=2750,y=3500,label="Pearson coef = 7.8%")
+
+
+grid.arrange (p1, p2, p3, p4,nrow=2, ncol=2)
+
+```
+

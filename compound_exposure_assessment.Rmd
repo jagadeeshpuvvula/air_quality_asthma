@@ -21,8 +21,7 @@ cri_poll<- read_csv("/work/jessebell/puvvula/aqd_raw/criteria_pollut.csv")
 cri_poll_sel<- cri_poll %>% select(date,acres,pres_burn,Co_1Hr_Max,
                                    Max_Sol_Rad, No_Max, Noy_Max,
                                    Noyno_Max,Ozone_1Hr_Max, 
-                                   Pm1025Lc_Max, pm25_Max, 
-                                   so2_1hr_max, so2_5min_max)
+                                   Pm1025Lc_Max, pm25_Max, so2_5min_max)
 pollen<- read_csv("/work/jessebell/puvvula/aqd_raw/pollen_for_analysis.csv")
 asthma<- read_csv("/work/jessebell/puvvula/aqd_raw/health_data.csv")
 
