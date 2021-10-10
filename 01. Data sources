@@ -6,3 +6,22 @@ Douglas cnty traffic                - City of Omaha Public Works      - Received
 ACS - 5 year (population data)      - US Census                       - Accessed on Oct 07, 2021
 Prescribed burn                     - Kansas Dept. of Health and Env. - Accessed on May 06, 2019
 UNMC station - pollen               - Dr. Rorie (UNMC)                - Received on Sep 02, 2021
+
+
+Age standardization using 2019 ACS estimates for the US
+ACS 2019 - 5 year estimates table S0101 
+https://data.census.gov/cedsci/table?q=&t=Age%20and%20Sex&g=0100000US&tid=ACSST5Y2019.S0101&hidePreview=true
+Accessed on Oct 10, 2021
+
+Female population fraction:
+U5 -> 0.0585
+5-9 -> 0.0599
+10-14 -> 0.0621
+15-19 -> 0.0629
+
+Male population fraction:
+U5 -> 0.0632
+5-9 -> 0.0642
+10-14 -> 0.0669
+15-19 -> 0.06770
+ 
