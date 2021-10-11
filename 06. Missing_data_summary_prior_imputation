@@ -1,0 +1,105 @@
+── Data Summary ────────────────────────
+                           Values
+Name                       dat   
+Number of rows             1442  
+Number of columns          84    
+_______________________          
+Column type frequency:           
+  Date                     1     
+  factor                   5     
+  numeric                  78    
+________________________         
+Group variables            None  
+
+── Variable type: Date ─────────────────────────────────────────────────────────────────────────────────
+  skim_variable n_missing complete_rate min        max        median     n_unique
+1 date                  0             1 2016-01-01 2019-12-31 2017-12-21     1442
+
+── Variable type: factor ───────────────────────────────────────────────────────────────────────────────
+  skim_variable n_missing complete_rate ordered n_unique top_counts                            
+1 month                 0             1 FALSE         12 3: 124, 5: 124, 7: 124, 8: 124        
+2 year                  0             1 FALSE          4 201: 366, 201: 365, 201: 364, 201: 347
+3 dow                   0             1 FALSE          7 2: 207, 3: 207, 4: 207, 5: 207        
+4 wDay                  0             1 FALSE          2 wee: 1034, wee: 408                   
+5 Season                0             1 FALSE          4 Sum: 368, Fal: 365, Win: 358, Spr: 351
+
+── Variable type: numeric ──────────────────────────────────────────────────────────────────────────────
+   skim_variable                    n_missing complete_rate          mean          sd    p0   p25    p50
+ 1 PRCP                                     0         1          0.0946        0.317    0     0      0  
+ 2 SNWD                                     0         1          0.337         1.23     0     0      0  
+ 3 SNOW                                     0         1          0.0640        0.429    0     0      0  
+ 4 TAVG                                     0         1         53.2          21.1     -7    36     55  
+ 5 TMAX                                     0         1         63.5          22.3     -1    46     67  
+ 6 TMIN                                     0         1         43.3          20.7    -16    27     45  
+ 7 AWND                                     0         1         10.3           4.10     2     7.2    9.6
+ 8 WDF2                                     0         1        215.          107.      10   150    180  
+ 9 WDF5                                     0         1        212.          107.      10   142.   180  
+10 WSF2                                     0         1         21.6           7.01     8.1  16.1   21  
+11 WSF5                                     0         1         27.9           9.30    10.1  21     27.1
+12 WT09                                     0         1          0.0146        0.120    0     0      0  
+13 WT07                                     0         1          0.000693      0.0263   0     0      0  
+14 WT01                                     0         1          0.322         0.467    0     0      0  
+15 WT06                                     0         1          0.0236        0.152    0     0      0  
+16 WT05                                     0         1          0.00832       0.0909   0     0      0  
+17 WT02                                     0         1          0.0416        0.200    0     0      0  
+18 WT04                                     0         1          0.0160        0.125    0     0      0  
+19 WT08                                     0         1          0.103         0.304    0     0      0  
+20 WT03                                     0         1          0.161         0.368    0     0      0  
+21 WT10                                     0         1          0.000693      0.0263   0     0      0  
+22 acres                                    0         1     421117.       916322.       0     0      0  
+23 pres_burn                                0         1          0.183         0.387    0     0      0  
+24 Co_1Hr_Max                              16         0.989      0.292         0.130    0.1   0.2    0.3
+25 Max_Sol_Rad                             12         0.992      0.900         0.367    0     0.7    0.9
+26 No_Max                                   5         0.997      7.06         11.3      0     1.8    3.5
+27 Noy_Max                                  5         0.997     20.3          17.3      0    10     15.4
+28 Noyno_Max                                5         0.997     14.8           8.49     0     8.5   13.2
+29 Ozone_1Hr_Max                           28         0.981      0.0223        0.0416   0     0      0  
+30 Pm1025Lc_Max                            81         0.944     26.9          19.0      1    15     23  
+31 pm25_Max                                51         0.965     15.8          15.7      1    10     14  
+32 so2_5min_max                             9         0.994      4.59         10.7      0     0.3    0.9
+33 ped_asth_cnt                             0         1          2.84          2.14     0     1      2  
+34 Alternaria                              53         0.963    800.         1291.       0     6    192  
+35 Ascospores                              53         0.963   7483.        13909.       0    48    861  
+36 Basidiospores                           53         0.963   5861.        11654.       0     2    633  
+37 Cercospora                              53         0.963    406.         1337.       0     0      0  
+38 Cladosporium                            53         0.963   9573.        15121.       0   348   2905  
+39 Dreshslera_Helminthosporium             54         0.963     23.1          63.2      0     0      0  
+40 Epicoccum                               53         0.963    161.          369.       0     0     27  
+41 Fusarium                                53         0.963     33.9         110.       0     0      0  
+42 Oidium_Erysiphe                         53         0.963     10.5          37.9      0     0      0  
+43 Penicillium_Aspergillus                 53         0.963    114.          331.       0     0      0  
+44 Peronospora                             53         0.963      9.52         39.3      0     0      0  
+45 Pithomyces                              53         0.963     44.9         118.       0     0      0  
+46 Polythrincium                           53         0.963     38.1          95.1      0     0      0  
+47 Rusts                                   53         0.963    101.          318.       0     0      0  
+48 Smuts_Myxomycetes                       53         0.963    635.          983.       0    23    210  
+49 Torula                                  53         0.963     54.7         141.       0     0      0  
+50 Unidentified Fungi                      53         0.963    336.          706.       0    27    162  
+51 Acer_Maple                               0         1          2.49         19.8      0     0      0  
+52 Alnus_Alder                              0         1          0.618        10.8      0     0      0  
+53 Ambrosia_Ragweed                         0         1         32.9         133.       0     0      0  
+54 Artemisia_Sage                           0         1          1.42          6.66     0     0      0  
+55 Betula_Birch                             0         1         14.0          68.9      0     0      0  
+56 Carya_Hickory                            0         1          0.474         3.16     0     0      0  
+57 Celtis_Hackberry                         0         1          3.41         33.7      0     0      0  
+58 Cheno_Amaranth_Pigwd                     0         1         17.7          67.8      0     0      0  
+59 Composite_Astera_Xanth_Cocklebur         0         1          0.747         2.65     0     0      0  
+60 Corylus_Hazelnut                         0         1          0.472         3.10     0     0      0  
+61 Cupress_Juniper_Cedar                    0         1         82.4         766.       0     0      0  
+62 Cypera_Carex_Sedge                       0         1          0.502         1.61     0     0      0  
+63 Fraxinus_Ash                             0         1         19.2         117.       0     0      0  
+64 Gramineae_Grass                          0         1          9.76         37.8      0     0      0  
+65 Juglans_Walnut                           0         1          3.18         21.1      0     0      0  
+66 Morus_Mulberry                           0         1         71.7         506.       0     0      0  
+67 Pinus_Pine                               0         1          2.49         11.0      0     0      0  
+68 Plantago_Plantain                        0         1          0.189         0.747    0     0      0  
+69 Platanus_Sycamore                        0         1          1.25         12.0      0     0      0  
+70 Populus_Cottonwood                       0         1         15.5         127.       0     0      0  
+71 Quercus_Oak                              0         1         18.4         105.       0     0      0  
+72 Rumex_Sheep_Sorrel                       0         1          0.210         1.01     0     0      0  
+73 Salix_Willow                             0         1          0.974         6.07     0     0      0  
+74 Tilia_Linden                             0         1          0.171         1.23     0     0      0  
+75 Ulmus_Elm                                0         1         11.3          94.8      0     0      0  
+76 Unidentified_Pollen                      0         1          0.548         2.03     0     0      0  
+77 Urtica_Nettle                            0         1         14.2          51.0      0     0      0  
+78 ID                                       0         1        722.          416.       1   361.   722. 

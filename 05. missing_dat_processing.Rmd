@@ -1,5 +1,5 @@
 ---
-title: "AQ_compound_exposure"
+title: "Missing data processing"
 author: "Puvvula"
 date: "10/6/2021"
 output: pdf_document
@@ -8,6 +8,8 @@ output: pdf_document
 ```{r}
 #load libraries
 library(tidyverse)
+library(janitor)
+library(skimr)
 library(lubridate)
 library(gridExtra)
 library(lemon)
@@ -15,26 +17,34 @@ library(lemon)
 
 
 ```{r}
-#load raw data and formatting
-climate<- read_csv("/work/jessebell/puvvula/aqd_raw/climate_data.csv")
-cri_poll<- read_csv("/work/jessebell/puvvula/aqd_raw/criteria_pollut.csv")
-cri_poll_sel<- cri_poll %>% select(date,acres,pres_burn,Co_1Hr_Max,
-                                   Max_Sol_Rad, No_Max, Noy_Max,
-                                   Noyno_Max,Ozone_1Hr_Max, 
-                                   Pm1025Lc_Max, pm25_Max, so2_5min_max)
-pollen<- read_csv("/work/jessebell/puvvula/aqd_raw/pollen_for_analysis.csv")
-asthma<- read_csv("/work/jessebell/puvvula/aqd_raw/health_data.csv")
+#load clean data 
+dat<- as_tibble(read_csv("/work/jessebell/puvvula/aqd_final_data/merged_fin.csv"))
 
-climate$date<-as.Date(climate$date, format = "%m/%d/%Y")
-cri_poll_sel$date<-as.Date(cri_poll_sel$date, format = "%m/%d/%Y")
-pollen$date<-as.Date(pollen$date, format = "%m/%d/%Y")
-asthma$date<-as.Date(asthma$date, format = "%m/%d/%Y")
+skimr::skim(dat)
+clean_names(dat)
 
-#join data by date
-dat<- left_join(cri_poll_sel, climate, by='date') %>%
-  left_join(.,pollen, by='date') %>%
-  left_join(.,asthma, by='date')
+#Add row identifier
+dat$ID<- seq.int(nrow(dat))
 
+### Extract/Formatting date variables
+#Added 4 variables extracted from date
+
+dat$date <- as.Date(dat$date, format = "%m/%d/%Y")
+dat$month<- as.factor(month(dat$date))
+dat$year<- as.factor(format(dat$date, '%Y'))
+dat$dow <- wday(as.Date(dat$date, format = "%m/%d/%Y"))
+weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+dat$wDay <- factor((weekdays(dat$date) %in% weekdays1), 
+                       levels=c(FALSE, TRUE), labels=c('weekend', 'weekday'))
+
+seasons = function(x){
+  if(x %in% 2:4) return("Spring")
+  if(x %in% 5:7) return("Summer")
+  if(x %in% 8:10) return("Fall")
+  if(x %in% c(11,12,1)) return("Winter")
+}
+
+dat$Season = as.factor(sapply(month(dat$date), seasons))
 ```
 
 
@@ -87,6 +97,8 @@ row.plot
 grid_arrange_shared_legend(percentage.plot,row.plot)
 ```
 
+Imputing missing values
+
 ```{r}
 # Data imputation - TBD
 library(pcaMethods)
@@ -100,8 +112,7 @@ write.csv(pca_imputed, "/work/jessebell/puvvula/aqd_raw/pca_imputed.csv",
 ```
 
 ```{r}
-#add row index to original data
-dat$row_id<- seq.int(nrow(dat))
+
 #select date and append date to imputed dataset
 date_join<- dat %>% select(row_id, date)
 imp_dat<- read_csv("/work/jessebell/puvvula/aqd_raw/pca_imputed.csv")
@@ -114,7 +125,6 @@ write.csv(merged_data, "/work/jessebell/puvvula/aqd_raw/final_imputed.csv",
 
 ```
 
-Start analysis here
 
 ```{r}
 #working with imputed dataset
