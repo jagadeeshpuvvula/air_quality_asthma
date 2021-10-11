@@ -27,12 +27,12 @@ clean_names(dat)
 dat$ID<- seq.int(nrow(dat))
 
 ### Extract/Formatting date variables
-#Added 4 variables extracted from date
+#Added 5 variables extracted from date
 
 dat$date <- as.Date(dat$date, format = "%m/%d/%Y")
 dat$month<- as.factor(month(dat$date))
 dat$year<- as.factor(format(dat$date, '%Y'))
-dat$dow <- wday(as.Date(dat$date, format = "%m/%d/%Y"))
+dat$dow <- as.factor(wday(as.Date(dat$date, format = "%m/%d/%Y")))
 weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
 dat$wDay <- factor((weekdays(dat$date) %in% weekdays1), 
                        levels=c(FALSE, TRUE), labels=c('weekend', 'weekday'))
@@ -106,34 +106,9 @@ library(pcaMethods)
 pc <- pca(dat, method="ppca")
 pca_imputed <- completeObs(pc)
 
-write.csv(pca_imputed, "/work/jessebell/puvvula/aqd_raw/pca_imputed.csv", 
+write.csv(pca_imputed, "/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv", 
           row.names = T)
 
 ```
 
-```{r}
-
-#select date and append date to imputed dataset
-date_join<- dat %>% select(row_id, date)
-imp_dat<- read_csv("/work/jessebell/puvvula/aqd_raw/pca_imputed.csv")
-
-#imputed data with date variable
-merged_data<- left_join(imp_dat,date_join, by="row_id")
-
-write.csv(merged_data, "/work/jessebell/puvvula/aqd_raw/final_imputed.csv", 
-          row.names = F)
-
-```
-
-
-```{r}
-#working with imputed dataset
-
-dat<- read_csv("/work/jessebell/puvvula/aqd_raw/final_imputed.csv")
-
-
-
-
-
-```
 

@@ -1,0 +1,13 @@
+---
+title: "Correlations"
+author: "Puvvula"
+date: "10/11/2021"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+
+dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed")
+```
+
