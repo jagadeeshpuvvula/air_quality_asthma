@@ -5,17 +5,17 @@ Number of rows             1442
 Number of columns          84    
 _______________________          
 Column type frequency:           
-  character                1     
+  Date                     1     
   factor                   16    
   numeric                  67    
 ________________________         
 Group variables            None  
 
-── Variable type: character ─────────────────────────────────────────────────────────────────────────────────────────────────────
-  skim_variable n_missing complete_rate   min   max empty n_unique whitespace
-1 date                  0             1     8    10     0     1442          0
+── Variable type: Date ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  skim_variable n_missing complete_rate min        max        median     n_unique
+1 date                  0             1 2016-01-01 2019-12-31 2017-12-21     1442
 
-── Variable type: factor ────────────────────────────────────────────────────────────────────────────────────────────────────────
+── Variable type: factor ────────────────────────────────────────────────────────────────────────────────────────────────────────────────
    skim_variable n_missing complete_rate ordered n_unique top_counts                            
  1 month                 0             1 FALSE         12 3: 124, 5: 124, 7: 124, 8: 124        
  2 year                  0             1 FALSE          4 201: 366, 201: 365, 201: 364, 201: 347
@@ -34,7 +34,7 @@ Group variables            None
 15 WT10                  0             1 FALSE          2 0: 1441, 1: 1                         
 16 pres_burn             0             1 FALSE          2 0: 1178, 1: 264                       
 
-── Variable type: numeric ───────────────────────────────────────────────────────────────────────────────────────────────────────
+── Variable type: numeric ───────────────────────────────────────────────────────────────────────────────────────────────────────────────
    skim_variable                    n_missing complete_rate        mean          sd    p0   p25    p50      p75       p100 hist 
  1 ID                                       0             1    722.        416.       1   361.   722.   1082.      1442    ▇▇▇▇▇
  2 PRCP                                     0             1      0.0946      0.317    0     0      0       0.02       6.17 ▇▁▁▁▁
