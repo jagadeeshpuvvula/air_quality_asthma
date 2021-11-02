@@ -45,6 +45,14 @@ seasons = function(x){
 }
 
 dat$Season = as.factor(sapply(month(dat$date), seasons))
+
+dat$ID<- seq.int(nrow(dat))
+```
+
+```{r}
+write.csv(dat, 
+          "/work/jessebell/puvvula/aqd_final_data/pAsthma_PREimp.csv", 
+          row.names = F)
 ```
 
 
@@ -99,14 +107,18 @@ grid_arrange_shared_legend(percentage.plot,row.plot)
 
 Imputing missing values
 
+
+
 ```{r}
 # Data imputation - TBD
 library(pcaMethods)
 
-pc <- pca(dat, method="ppca")
+pre_imp<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_PREimp.csv")
+
+pc <- pca(pre_imp, method="ppca")
 pca_imputed <- completeObs(pc)
 
-write.csv(pca_imputed, "/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv", 
+write.csv(pca_imputed, "/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed_oct.csv", 
           row.names = T)
 
 ```
