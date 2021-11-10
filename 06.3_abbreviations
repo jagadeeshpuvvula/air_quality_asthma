@@ -1,5 +1,12 @@
 Abbreviations:
 
+ped_ast_original: p_ast	
+ped_ast_lag_1: p_ast_l1	
+ped_ast_lag_2: p_ast_l2	
+ped_ast_lag_3: p_ast_l3	
+ped_ast_lag_4: p_ast_l4	
+ped_ast_lag_5: p_ast_l5
+
 cp_01: co: Co_1Hr_Max	
 cp_02: no: No_Max	
 cp_03: noy: Noy_Max	
