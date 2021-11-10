@@ -44,3 +44,23 @@ wp_07: Weed: Rumex_Sheep_Sorrel
 wp_08: Weed: Urtica_Nettle
 gp: Grass: Gramineae_Grass	
 up: unk: Unidentified_Pollen	
+
+mld_01: Penicillium_Aspergillus	
+mld_01: Cladosporium	
+mld_01: Alternaria	
+mld_01: scospores	
+mld_01: Basidiospores	
+mld_01: Cercospora	
+mld_01: Dreshslera_Helminthosporium	
+mld_01: Epicoccum	
+mld_01: Fusarium	
+mld_01: Oidium_Erysiphe	
+mld_01: Peronospora	
+mld_01: Pithomyces	
+mld_01: Polythrincium	
+mld_01: Rusts	
+mld_01: Smuts_Myxomycetes	
+mld_01: Torula	
+mld_01: Unidentified Fungi
+
+
