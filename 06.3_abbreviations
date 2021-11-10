@@ -38,20 +38,20 @@ gp: Grass: Gramineae_Grass
 up: unk: Unidentified_Pollen	
 
 mld_01: Penicillium_Aspergillus	
-mld_01: Cladosporium	
-mld_01: Alternaria	
-mld_01: scospores	
-mld_01: Basidiospores	
-mld_01: Cercospora	
-mld_01: Dreshslera_Helminthosporium	
-mld_01: Epicoccum	
-mld_01: Fusarium	
-mld_01: Oidium_Erysiphe	
-mld_01: Peronospora	
-mld_01: Pithomyces	
-mld_01: Polythrincium	
-mld_01: Rusts	
-mld_01: Smuts_Myxomycetes	
-mld_01: Torula	
-mld_01: Unidentified Fungi
+mld_02: Cladosporium	
+mld_03: Alternaria	
+mld_04: scospores	
+mld_05: Basidiospores	
+mld_06: Cercospora	
+mld_07: Dreshslera_Helminthosporium	
+mld_08: Epicoccum	
+mld_09: Fusarium	
+mld_10: Oidium_Erysiphe	
+mld_11: Peronospora	
+mld_12: Pithomyces	
+mld_13: Polythrincium	
+mld_14: Rusts	
+mld_15: Smuts_Myxomycetes	
+mld_16: Torula	
+mld_17: Unidentified Fungi
 
