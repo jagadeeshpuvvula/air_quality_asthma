@@ -38,7 +38,13 @@ write.csv(dat_norm, "/work/jessebell/puvvula/aqd_final_data/norm.csv")
 
 #Min-Max scaled data with date
 norm_dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/norm.csv")
-norm_plt<- norm_dat %>% gather(metric, value, p_ast:mld_17)
+#Removing lag outcome variables
+norm_dat<- norm_dat[!(names(norm_dat) %in% c("p_ast_l1", "p_ast_l2", "p_ast_l3",
+                                             "p_ast_l4", "p_ast_l5"))]
+
+#Subset variables
+norm_dat1<-norm_dat[1:10]
+norm_plt<- norm_dat1 %>% gather(metric, value, p_ast:mld_18) 
 
 library(lubridate)
 
@@ -48,12 +54,28 @@ df <- norm_plt %>% mutate(year = year(date),
                           day = day(date))
 
 
-ggplot(df,aes(day,metric$p_ast,fill=value))+
+order<- c("p_ast","cp_01", "cp_02","cp_03","cp_04",
+          "cp_05", "cp_06","cp_07","cp_08")
+
+ggplot(df,aes(x=day,y=metric,fill=value))+
   geom_tile(color= "white",size=0.1)+ 
   facet_grid(year~month)+
+  scale_x_continuous(breaks=c(10,20,30))+
   scale_fill_gradient(low="red", high="green")+
   theme(axis.line = element_line(colour = "black"))+
-  theme_bw()
+  theme_bw()+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position="bottom",
+        panel.spacing=unit(0.01, "lines"),
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.line = element_line(colour = "black"),
+        strip.background = element_rect(colour="transparent", 
+                                      fill="transparent"))
+  
 
 write_csv(df, "/work/jessebell/puvvula/aqd_final_data/norm_f_tableau.csv")
 ```
