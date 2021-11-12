@@ -76,13 +76,79 @@ ggplot(df,aes(x=day,y=metric,fill=value))+
         strip.background = element_rect(colour="transparent", 
                                       fill="transparent"))
   
+```
 
-write_csv(df, "/work/jessebell/puvvula/aqd_final_data/norm_f_tableau.csv")
+
+```{r}
+#All pollutants
+library(tidyverse)
+library(lubridate)
+library(viridis)
+
+#Min-Max scaled data with date
+norm_dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/norm.csv")
+#Removing lag outcome variables
+norm_dat<- norm_dat[!(names(norm_dat) %in% c("p_ast_l1", "p_ast_l2", "p_ast_l3",
+                                             "p_ast_l4", "p_ast_l5"))]
+
+#wide to long format conversion
+norm_plt<- norm_dat %>% gather(metric, value, p_ast:mld_17) 
+
+#create TS variables
+norm_plt$date <- as.Date(norm_plt$date, format = "%m/%d/%Y")
+df <- norm_plt %>% mutate(year = year(date),
+                          month = month(date, label=TRUE),
+                          day = day(date))
+
+#df$group <- as.factor((str_extract(df$metric, "[aA-zZ]+")))
+
+#defining the order of y-axis
+y_axis_order<-  c("p_ast","cp_01","cp_02","cp_03","cp_04","cp_05","cp_06","cp_07",
+         "cp_08","tp_01","tp_02" ,"tp_03", "tp_04","tp_05" ,"tp_06","tp_07",
+         "tp_08","tp_09","tp_10","tp_11" ,"tp_12","tp_13","tp_14","tp_15",
+         "tp_16" , "tp_17" ,"wp_01","wp_02","wp_03","wp_04","wp_05" ,"wp_06",
+         "wp_07","wp_08","gp","up","mld_01","mld_02","mld_03","mld_04",
+         "mld_05","mld_06","mld_07","mld_08","mld_09","mld_10","mld_11",
+         "mld_12","mld_13","mld_14", "mld_15","mld_16","mld_17")
+
+#filter data by year
+df_2016<-df%>% filter(year==2016)
+df_2017<-df%>% filter(year==2017)
+df_2018<-df%>% filter(year==2018)
+df_2019<-df%>% filter(year==2019)
+
+#plotting data by year
+ggplot(df_2019,aes(x=day,y=metric,fill=value))+
+  geom_tile(color= "transparent",size=0.001)+ 
+  facet_grid(.~month, scales='free_x', space="free_x")+
+  scale_x_continuous(breaks=c(10,20,30))+
+  scale_y_discrete(limits=rev(y_axis_order))+
+  scale_fill_viridis(name="Min-Max Scaled")+
+  theme(axis.line = element_line(colour = "black"))+
+  theme_bw()+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position="bottom",
+        panel.spacing=unit(0.05, "lines"),
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.line = element_line(colour = "black"),
+        strip.background = element_rect(colour="transparent", 
+                                      fill="transparent"))
+
+ggsave("/work/jessebell/puvvula/aqd_2019.tiff", 
+       width = 10,height = 8, units="in", dpi=300)
+dev.off()
+  
 ```
 
 
 
 ```{r}
+library(corrplot)
+dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv")
 
 M<-cor(dat[2:59])
 
@@ -111,6 +177,8 @@ cor_plt<-corrplot(M, method="color", col=col(200),
          p.mat = p.mat, sig.level = 0.01, insig = "blank", 
          # hide correlation coefficient on the principal diagonal
          diag=FALSE)
+
+
 
 ```
 
