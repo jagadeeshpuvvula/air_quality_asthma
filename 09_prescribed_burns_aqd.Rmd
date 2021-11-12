@@ -1,0 +1,65 @@
+---
+title: "09_prescribed_burns_aqd"
+author: "Puvvula"
+date: "11/12/2021"
+output: pdf_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(zoo)
+library(splines)
+library(tsModel)
+library(dlnm)
+library(mgcv)
+
+df<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv")
+
+
+#Formatting and creating new TS variables
+df <- norm_plt %>% mutate(year = year(date),
+                          month = month(date, label=TRUE),
+                          day = day(date))
+
+df$dow <- wday(as.Date(df$date, format = "%m/%d/%Y"))
+weekdays1 <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+df$wDay <- factor((weekdays(df$date) %in% weekdays1), 
+                       levels=c(FALSE, TRUE), labels=c('weekend', 'weekday'))
+df$week_num<- week(ymd(df$date))
+
+#year to quarter conversion use zoo library for as.nearmon function
+yq <- as.yearqtr(as.yearmon(dat$date, "%Y %m/%d/") + 1/12)
+dat$season <- factor(format(yq, "%q"), levels = 1:4,
+                     labels = c("winter", "spring", "summer", "fall"))
+
+```
+
+```{r}
+#splines = 2 - 12 times number of study years
+library(gam)
+dfValues <- c(2, 4, 6, 8, 10, 12, 14)
+control <- gam.control(epsilon = 0.00000001,bf.epsilon = 0.00000001)
+
+modelsGAM <- sapply(dfValues, function(dfVal){
+  total.df <- dfVal * 4
+  fit <- gam(asthma_ped ~ Co.1Hr.Max + tmax + 
+             s(date, total.df), data = dat_max_var,
+             family = poisson, control = control)
+  gamex <- gam.exact(fit)
+  gamex.coef <- gamex$coefficients["Co.1Hr.Max","A-exact SE"]
+  c(coef(fit)["Co.1Hr.Max"], gamex.coef)
+               
+})
+```
+
+
+```{r}
+#EHP code
+cb1.sd <- crossbasis(dat$int_SDL0, lag=4, argvar=list(fun="lin",cen=0),
+                     arglag=list(fun="integer")) 
+
+cb2.nsd <- crossbasis(dat$int_NSDL0, lag=4, argvar=list(fun="lin",cen=0),
+                      arglag=list(fun="integer")) 
+```
+

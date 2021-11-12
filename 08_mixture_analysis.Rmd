@@ -1,0 +1,25 @@
+---
+title: "08_mixture_analysis"
+author: "Puvvula"
+date: "11/12/2021"
+output: pdf_document
+---
+
+
+```{r}
+library(tidyverse)
+library(gWQS)
+library(xtable)
+library(knitr)
+
+df<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv")
+
+df <- norm_plt %>% mutate(year = year(date),
+                          month = month(date, label=TRUE),
+                          day = day(date))
+
+
+
+
+```
+
