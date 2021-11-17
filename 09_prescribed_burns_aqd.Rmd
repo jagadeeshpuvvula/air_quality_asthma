@@ -13,12 +13,13 @@ library(splines)
 library(tsModel)
 library(dlnm)
 library(mgcv)
+library(ggstatsplot)
 
 df<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv")
 
-
 #Formatting and creating new TS variables
-df <- norm_plt %>% mutate(year = year(date),
+df$date<- as.Date(df$date, format = "%m/%d/%Y")
+df <- df %>% mutate(year = year(date),
                           month = month(date, label=TRUE),
                           day = day(date))
 
@@ -29,37 +30,157 @@ df$wDay <- factor((weekdays(df$date) %in% weekdays1),
 df$week_num<- week(ymd(df$date))
 
 #year to quarter conversion use zoo library for as.nearmon function
-yq <- as.yearqtr(as.yearmon(dat$date, "%Y %m/%d/") + 1/12)
-dat$season <- factor(format(yq, "%q"), levels = 1:4,
+yq <- as.yearqtr(as.yearmon(df$date, "%Y %m/%d/") + 1/12)
+df$season <- factor(format(yq, "%q"), levels = 1:4,
                      labels = c("winter", "spring", "summer", "fall"))
 
+#Save data with ts variables
+write_csv(df,"/work/jessebell/puvvula/aqd_final_data/p_burn_asth.csv")
+
+```
+
+Start here
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(zoo)
+library(splines)
+library(tsModel)
+library(dlnm)
+library(mgcv)
+library(ggstatsplot)
+
+
+dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/p_burn_asth.csv")
+dat$month<-as.factor(dat$month)
+dat$wDay<-as.factor(dat$wDay)
+dat$dow<-as.factor(dat$dow)
+
+#Excluding pollen dominant months
+filter_month<- c("Jan","Feb","Mar","Apr")
+df<- subset(dat, month %in% filter_month)
 ```
 
 ```{r}
-#splines = 2 - 12 times number of study years
-library(gam)
-dfValues <- c(2, 4, 6, 8, 10, 12, 14)
-control <- gam.control(epsilon = 0.00000001,bf.epsilon = 0.00000001)
+set.seed(2021)
+#group mean difference testing : Burn and non-burn season
 
-modelsGAM <- sapply(dfValues, function(dfVal){
-  total.df <- dfVal * 4
-  fit <- gam(asthma_ped ~ Co.1Hr.Max + tmax + 
-             s(date, total.df), data = dat_max_var,
-             family = poisson, control = control)
-  gamex <- gam.exact(fit)
-  gamex.coef <- gamex$coefficients["Co.1Hr.Max","A-exact SE"]
-  c(coef(fit)["Co.1Hr.Max"], gamex.coef)
-               
+# Asthma exacerbations
+ggbetweenstats(df,pres_burn,p_ast)
+#Observed significantly greater ER visits during burn season (b=3.14 > nb=1.93 )
+
+#PM10
+ggbetweenstats(dat,pres_burn,cp_07)
+#Significantly difference (b=26.65 >nb=17.40)
+
+#PM2.5
+ggbetweenstats(dat,pres_burn,cp_08)
+#Non-significantly difference (b=17.34 ~ nb=17.28)
+```
+
+Correlation between PM and ped asthma
+PM10 - lag 0 -    6.37
+PM10 - lag 1 -    9.17
+PM10 - lag 2 -    5.33
+PM10 - lag 3 -    10.48
+PM10 - lag 4 -    9.50
+PM10 - lag 5 -    7.20
+
+PM2.5 - lag 0 -     -0.39
+PM2.5 - lag 1 -     -0.39
+PM2.5 - lag 2 -     -0.48
+PM2.5 - lag 3 -     0.76
+PM2.5 - lag 4 -     -0.57
+PM2.5 - lag 5 -     -5.24
+
+```{r}
+#Start modeling with PM10 and pediatric asthma
+
+#GLM
+maxlag<- 0:5
+
+models<- sapply(maxlag, function(mlag) {
+  fit<- glm(p_ast ~ cp_07+Lag(TMAX, seq(0, mlag)),
+            data=dat,family = poisson)
+  summ<-summary(fit)
+  summ.coef<- summ$coefficients["cp_07", 2]
+  c(coef(fit)["cp_07"], summ.coef)
 })
-```
+
+#producing a figure from above model
+rng <- range(models[1, ] - 1.96 * models[2,], models[1, ] + 1.96 * models[2,], 0)
+par(mar = c(4, 5, 1, 1))
+plot(maxlag, models[1, ], type = "b",pch = 20, ylim = rng, 
+     xlab = "Maximum temperature lag",
+     ylab = expression(hat(beta) * " for " *PM[10] * " at lag 1"))
+lines(maxlag, models[1, ] + 1.96 * models[2,], lty = 2)
+lines(maxlag, models[1, ] - 1.96 * models[2,], lty = 2)
+abline(h = 0, lty = 3)
+
+##########################################
+##########################################
+
+maxlag <- 0:7
+
+#burn and non-burn datasets
+data.burn <- subset(dat_max_var, pres_burn %in% c("1"))
+data.nburn <- subset(dat_max_var, pres_burn %in% c("0"))
+
+#individual model for burn and non-burn pg 81
+models.burn<- sapply(maxlag, function(mlag) {
+  fit<- glm(asthma_ped ~ Co.1Hr.Max+Lag(tmax, seq(0, mlag)),
+            data=data.burn,family = poisson)
+  summ<-summary(fit)
+  summ.coef<- summ$coefficients["Co.1Hr.Max", 2]
+  c(coef(fit)["Co.1Hr.Max"], summ.coef)
+})
+
+models.nburn<- sapply(maxlag, function(mlag) {
+  fit<- glm(asthma_ped ~ Co.1Hr.Max+Lag(tmax, seq(0, mlag)),
+            data=data.nburn,family = poisson)
+  summ<-summary(fit)
+  summ.coef<- summ$coefficients["Co.1Hr.Max", 2]
+  c(coef(fit)["Co.1Hr.Max"], summ.coef)
+})
+
+#figure from above model
+trellis.par.set(theme = canonical.theme("pdf",FALSE))
+y <- c(models.nburn[1, ], models.burn[1,])
+xpts <- rep(maxlag, 2)
+f<- gl(2, length(maxlag), labels = c("burn season","non-burn season"))
+
+std <- c(models.nburn[2, ], models.burn[2,])
+rng <- range(y - 1.96 * std, y + 1.96 *std, 0)
+rng <- rng + c(-1, 1) * 0.05 * diff(rng)
+ylab <- expression(hat(beta) * " for " *CO_1hr_avg * " at lag 1")
+
+p <- xyplot(y ~ xpts | f, as.table = TRUE,
+            ylim = rng, subscripts = TRUE, panel = function(x,y, subscripts, ...) {
+              panel.xyplot(x, y, ...)
+              llines(x, y - 1.96 * std[subscripts],lty = 2)
+              llines(x, y + 1.96 * std[subscripts],lty = 2)
+              panel.abline(h = 0, lty = 3)}, 
+            xlab = "Maximum temperature lag",layout = c(1, 2), 
+            type = "b", ylab = ylab,pch = 20)
+            
+print(p)
+
+############################################
+############################################
 
 
-```{r}
-#EHP code
-cb1.sd <- crossbasis(dat$int_SDL0, lag=4, argvar=list(fun="lin",cen=0),
-                     arglag=list(fun="integer")) 
 
-cb2.nsd <- crossbasis(dat$int_NSDL0, lag=4, argvar=list(fun="lin",cen=0),
-                      arglag=list(fun="integer")) 
+#GAM
+m1<-  gam(p_ast_l3~ s(cp_07,by=as.factor(pres_burn), 
+                      k=4, bs='cr'),
+         family=poisson(link = log),
+         method = "GCV.Cp", data = dat)
+summary(m1)
+plot.gam(m1)
+
+#DLNM
+
+
 ```
 
