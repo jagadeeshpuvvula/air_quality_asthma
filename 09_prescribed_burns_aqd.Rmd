@@ -98,86 +98,18 @@ PM2.5 - lag 5 -     -5.24
 #Start modeling with PM10 and pediatric asthma
 
 #GLM
-maxlag<- 0:5
+library(stats)
+library(splines)
+library(tsModel)
+library(mda)
+library(lattice)
+library(MASS)
 
-models<- sapply(maxlag, function(mlag) {
-  fit<- glm(p_ast ~ cp_07+Lag(TMAX, seq(0, mlag)),
-            data=dat,family = poisson)
-  summ<-summary(fit)
-  summ.coef<- summ$coefficients["cp_07", 2]
-  c(coef(fit)["cp_07"], summ.coef)
-})
+df.nburn<- df %>% subset(pres_burn=="0")
+df.burn<- df %>% subset(pres_burn=="1")
 
-#producing a figure from above model
-rng <- range(models[1, ] - 1.96 * models[2,], models[1, ] + 1.96 * models[2,], 0)
-par(mar = c(4, 5, 1, 1))
-plot(maxlag, models[1, ], type = "b",pch = 20, ylim = rng, 
-     xlab = "Maximum temperature lag",
-     ylab = expression(hat(beta) * " for " *PM[10] * " at lag 1"))
-lines(maxlag, models[1, ] + 1.96 * models[2,], lty = 2)
-lines(maxlag, models[1, ] - 1.96 * models[2,], lty = 2)
-abline(h = 0, lty = 3)
-
-##########################################
-##########################################
-
-maxlag <- 0:7
-
-#burn and non-burn datasets
-data.burn <- subset(dat_max_var, pres_burn %in% c("1"))
-data.nburn <- subset(dat_max_var, pres_burn %in% c("0"))
-
-#individual model for burn and non-burn pg 81
-models.burn<- sapply(maxlag, function(mlag) {
-  fit<- glm(asthma_ped ~ Co.1Hr.Max+Lag(tmax, seq(0, mlag)),
-            data=data.burn,family = poisson)
-  summ<-summary(fit)
-  summ.coef<- summ$coefficients["Co.1Hr.Max", 2]
-  c(coef(fit)["Co.1Hr.Max"], summ.coef)
-})
-
-models.nburn<- sapply(maxlag, function(mlag) {
-  fit<- glm(asthma_ped ~ Co.1Hr.Max+Lag(tmax, seq(0, mlag)),
-            data=data.nburn,family = poisson)
-  summ<-summary(fit)
-  summ.coef<- summ$coefficients["Co.1Hr.Max", 2]
-  c(coef(fit)["Co.1Hr.Max"], summ.coef)
-})
-
-#figure from above model
-trellis.par.set(theme = canonical.theme("pdf",FALSE))
-y <- c(models.nburn[1, ], models.burn[1,])
-xpts <- rep(maxlag, 2)
-f<- gl(2, length(maxlag), labels = c("burn season","non-burn season"))
-
-std <- c(models.nburn[2, ], models.burn[2,])
-rng <- range(y - 1.96 * std, y + 1.96 *std, 0)
-rng <- rng + c(-1, 1) * 0.05 * diff(rng)
-ylab <- expression(hat(beta) * " for " *CO_1hr_avg * " at lag 1")
-
-p <- xyplot(y ~ xpts | f, as.table = TRUE,
-            ylim = rng, subscripts = TRUE, panel = function(x,y, subscripts, ...) {
-              panel.xyplot(x, y, ...)
-              llines(x, y - 1.96 * std[subscripts],lty = 2)
-              llines(x, y + 1.96 * std[subscripts],lty = 2)
-              panel.abline(h = 0, lty = 3)}, 
-            xlab = "Maximum temperature lag",layout = c(1, 2), 
-            type = "b", ylab = ylab,pch = 20)
-            
-print(p)
-
-############################################
-############################################
-
-
-
-#GAM
-m1<-  gam(p_ast_l3~ s(cp_07,by=as.factor(pres_burn), 
-                      k=4, bs='cr'),
-         family=poisson(link = log),
-         method = "GCV.Cp", data = dat)
-summary(m1)
-plot.gam(m1)
+fit.burn<- glm.nb(p_ast ~ Lag(cp_07, 0:5)+TMAX,data = df.burn)
+summary(fit.burn)
 
 #DLNM
 
