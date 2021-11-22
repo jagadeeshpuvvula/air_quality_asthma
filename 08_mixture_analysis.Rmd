@@ -5,13 +5,12 @@ date: "11/12/2021"
 output: pdf_document
 ---
 
-
 ```{r}
 library(tidyverse)
 library(lubridate)
 library(zoo)
 library(gWQS)
-library(xtable)
+
 
 dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv")
 
@@ -19,6 +18,27 @@ dat$date<- as.Date(dat$date, format = "%m/%d/%Y")
 yq <- as.yearqtr(as.yearmon(dat$date, "%Y %m/%d/") + 1/12)
 dat$season <- factor(format(yq, "%q"), levels = 1:4,
                      labels = c("winter", "spring", "summer", "fall"))
+
+```
+
+```{r}
+#create season dummy variables (Dr. Gwon Strategy)
+dat$fall<- ifelse(dat$season=="fall",1,0)
+dat$spring<- ifelse(dat$season=="spring",1,0)
+dat$winter<-ifelse(dat$season=="winter",1,0)
+
+m1<- names(dat[8:59])
+m2<- names(dat[84:86])
+
+mixture<-c(m1,m2)
+
+mod1 = gwqs(p_ast ~ wqs,
+          stratified = "season",
+          mix_name = mixture, data = dat, q = 10,
+          validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
+          family = "negbin",
+          seed = 2021)
+
 
 ```
 
@@ -33,88 +53,47 @@ dat$season <- factor(format(yq, "%q"), levels = 1:4,
 # 01 - Grass pollen
 # 01 - Unknown pollen
 # 17 - Mold
-mixture=c("cp_01","cp_02","cp_03","cp_04","cp_05","cp_06","cp_07","cp_08",
-          "gp","up","tp_01","tp_02","tp_03","tp_04","tp_05","tp_06","tp_07",
-          "tp_08","tp_09","tp_10","tp_11","tp_12","tp_13","tp_14","tp_15",
-          "tp_16","tp_17","wp_01","wp_02","wp_03","wp_04","wp_05","wp_06",
-          "wp_07","wp_08","mld_01","mld_02","mld_03","mld_04","mld_05","mld_06",
-          "mld_07","mld_08","mld_09","mld_10","mld_11","mld_12","mld_13",
-          "mld_14","mld_15","mld_16","mld_17")
 
+mixture<- names(dat[8:59])
+
+dat.winter<- dat %>% subset(season =="winter")
 dat.spring<- dat %>% subset(season =="spring")
+dat.summer<- dat %>% subset(season =="summer")
+dat.fall<- dat %>% subset(season =="fall")
 
-m1 = gwqsrh(p_ast ~ wqs,
-            mix_name = mixture, data = dat.spring, q = 10,
-            validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE, 
-            family = "negbin",
-            seed = 2021, rh=2)
 
-m1 = gwqsrh(p_ast ~ wqs,
-            mix_name = mixture, data = dat.spring, q = 10,
-            validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE, 
-            family = "negbin",
-            seed = 2021, rh=2)
 
+
+#gWQS
+m1 = gwqs(p_ast ~ wqs,
+          stratified = "season",
+          mix_name = mixture, data = dat, q = 10,
+          validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
+          family = "negbin",
+          seed = 2021)
+
+#Model summary: for regular model
 gwqs_summary_tab(m1)
-# 0.0817 (0.0356, 0.128)
-gwqsrh_boxplot(m1)
-gwqs_weights_tab(m1)
+gwqs_scatterplot(m1)
+gwqs_barplot(m1)
 summary(m1$fit)
 m1$final_weights
 
+#gWQS with repeated holdout
+#Suggested repeated holdout >30
+m1_rh = gwqsrh(p_ast ~ wqs,
+          stratified = "season",
+          mix_name = mixture, data = dat, q = 10,
+          validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
+          family = "negbin",
+          seed = 2021, rh=50)
+
+#Model summary: For repeated holdout
+gwqs_summary_tab(m1_rh)
+gwqsrh_boxplot(m1_rh)
+gwqs_weights_tab(m1_rh)
+summary(m1_rh$fit)
+
+
+
 ```
-
-
-       mix_name    Estimate        2.5 %       97.5%
-mld_14   mld_14 0.143398845 0.0090855432 0.277712147
-cp_01     cp_01 0.094591838 0.0683733978 0.120810278
-mld_15   mld_15 0.051413731 0.0085311138 0.094296348
-mld_12   mld_12 0.049687305 0.0040529290 0.095321680
-cp_07     cp_07 0.046564085 0.0225924558 0.070535715
-mld_05   mld_05 0.041663241 0.0039780465 0.079348435
-mld_16   mld_16 0.033677539 0.0188500377 0.048505041
-mld_01   mld_01 0.030954109 0.0158814696 0.046026748
-mld_08   mld_08 0.030553073 0.0225835647 0.038522581
-mld_02   mld_02 0.025020752 0.0113506165 0.038690888
-cp_02     cp_02 0.024067436 0.0093970034 0.038737868
-mld_17   mld_17 0.019653476 0.0140931632 0.025213789
-mld_04   mld_04 0.019148147 0.0046668512 0.033629444
-cp_08     cp_08 0.018112844 0.0181070366 0.018118651
-cp_04     cp_04 0.014608812 0.0007304433 0.028487180
-tp_11     tp_11 0.010114358 0.0095168802 0.010711835
-tp_15     tp_15 0.010114358 0.0095168802 0.010711835
-tp_02     tp_02 0.010114358 0.0095168802 0.010711835
-tp_14     tp_14 0.010114358 0.0095168802 0.010711835
-tp_13     tp_13 0.010114358 0.0095168802 0.010711835
-tp_12     tp_12 0.010114358 0.0095168802 0.010711835
-wp_02     wp_02 0.010114358 0.0095168801 0.010711835
-wp_06     wp_06 0.010114358 0.0095168801 0.010711835
-tp_04     tp_04 0.010114358 0.0095168802 0.010711835
-tp_01     tp_01 0.010114358 0.0095168802 0.010711835
-gp           gp 0.010114358 0.0095168802 0.010711835
-up           up 0.010114358 0.0095168801 0.010711835
-tp_09     tp_09 0.010114358 0.0095168801 0.010711835
-cp_06     cp_06 0.010114358 0.0095168802 0.010711835
-tp_06     tp_06 0.010114358 0.0095168801 0.010711835
-tp_05     tp_05 0.010114358 0.0095168801 0.010711835
-wp_05     wp_05 0.010114358 0.0095168801 0.010711835
-tp_17     tp_17 0.010114358 0.0095168801 0.010711835
-tp_16     tp_16 0.010114358 0.0095168802 0.010711835
-tp_10     tp_10 0.010114358 0.0095168801 0.010711835
-tp_07     tp_07 0.010114358 0.0095168801 0.010711835
-tp_08     tp_08 0.010114358 0.0095168801 0.010711835
-wp_03     wp_03 0.010114358 0.0095168801 0.010711835
-mld_10   mld_10 0.010114358 0.0095168801 0.010711835
-wp_01     wp_01 0.010114358 0.0095168801 0.010711835
-tp_03     tp_03 0.010114358 0.0095168801 0.010711835
-mld_06   mld_06 0.010114358 0.0095168801 0.010711835
-wp_04     wp_04 0.010114358 0.0095168801 0.010711835
-wp_07     wp_07 0.010114358 0.0095168801 0.010711835
-mld_11   mld_11 0.010114358 0.0095168801 0.010711835
-mld_07   mld_07 0.010114358 0.0095168801 0.010711835
-mld_13   mld_13 0.010114358 0.0095168801 0.010711835
-mld_09   mld_09 0.010114358 0.0095168801 0.010711835
-wp_08     wp_08 0.010114358 0.0095168801 0.010711835
-cp_05     cp_05 0.006443859 0.0055170900 0.007370629
-cp_03     cp_03 0.003378624 0.0024583530 0.004298895
-mld_03   mld_03 0.003174125 0.0026593416 0.003688908

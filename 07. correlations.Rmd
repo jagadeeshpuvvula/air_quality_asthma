@@ -148,9 +148,21 @@ dev.off()
 
 ```{r}
 library(corrplot)
+library(tidyverse)
+library(lubridate)
+library(zoo)
 dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv")
 
-M<-cor(dat[2:59])
+dat$date <- as.Date(dat$date, format = "%m/%d/%Y")
+dat$month<- as.factor(month(dat$date))
+yq <- as.yearqtr(as.yearmon(dat$date, "%Y %m/%d/") + 1/12)
+dat$season <- factor(format(yq, "%q"), levels = 1:4,
+                     labels = c("winter", "spring", "summer", "fall"))
+
+
+dat.spring<- dat %>% subset(season =="spring")
+
+M<-cor(dat.spring[2:59], method = "spearman", use = "complete.obs")
 
 cor.mtest <- function(mat, ...) {
   mat <- as.matrix(mat)
@@ -167,7 +179,7 @@ cor.mtest <- function(mat, ...) {
   p.mat
 }
 # matrix of the p-value of the correlation
-p.mat <- cor.mtest(dat[2:59])
+p.mat <- cor.mtest(dat.spring[2:59])
 
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 cor_plt<-corrplot(M, method="color", col=col(200),  
