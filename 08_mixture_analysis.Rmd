@@ -88,7 +88,6 @@ m1_rh = gwqsrh(p_ast ~ wqs,
           family = "negbin",
           seed = 2021, rh=50)
 
-
 #Model summary: For repeated holdout
 gwqs_summary_tab(m1_rh)
 gwqsrh_boxplot(m1_rh)
