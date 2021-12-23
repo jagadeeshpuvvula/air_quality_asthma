@@ -48,9 +48,97 @@ corrplot(M, method="color", col=col(200),
 
 ```{r}
 #Spatial analysis using CARbayes
+#https://www.ravenmcknight.com/post/carbayes-tutorial/
+
+library(tidyverse)
+library(sf)
+library(spdep)
+library(CARBayes)
+library(janitor)
+
+dat<- read_sf("env_asth/env_asth_analysis.shp")
+
+#g1= under 5 years
+#g2= 5-9 years
+#g3= 10-14 years
+#g4= 15-19 years
+dat<- dat %>% rename(male_ar=Ne_sdoh__1,female_ar=Ne_sdoh__2,
+                     E_TOTPOP=Ne_sdoh__3,unins_lt6yr=Ne_sdoh__4,
+                     unins_7_18yr=Ne_sdoh__5, owner_occ=Ne_sdoh__6,
+                     rente_occu=Ne_sdoh__7, ssi_snap=Ne_sdoh__8,
+                     hispanic=Ne_sdoh__9,blk=Ne_sdoh_10,white=Ne_sdoh_11,
+                     E_POV=Ne_sdoh_12,unemp=Ne_sdoh_13,pci=Ne_sdoh_14,
+                     nohsdp=Ne_sdoh_15,sing_prnt=Ne_sdoh_16,
+                     minority=Ne_sdoh_17,limlang=Ne_sdoh_18,crowd=Ne_sdoh_19,
+                     noveh=Ne_sdoh_20,zip=Ne_sdoh_21,
+                     g1f_cnt=Ne_sdoh_22,g1f_pop=Ne_sdoh_23,
+                     g1m_cnt=Ne_sdoh_24,g1m_pop=Ne_sdoh_25,
+                     g2f_cnt=Ne_sdoh_26,g2f_pop=Ne_sdoh_27,
+                     g2m_cnt=Ne_sdoh_28,g2m_pop=Ne_sdoh_29,
+                     g3f_cnt=Ne_sdoh_30,g3f_pop=Ne_sdoh_31,
+                     g3m_cnt=Ne_sdoh_32,g3m_pop=Ne_sdoh_33,
+                     g4f_cnt=Ne_sdoh_34,g4f_pop=Ne_sdoh_35,
+                     g4m_cnt=Ne_sdoh_36,g4m_pop=Ne_sdoh_37)
 
 
-dat<- read_sf('/work/jessebell/puvvula/env_asth/env_asth_analysis.shp')
+map_theme <- theme_minimal() + theme(text = element_text(color = "#60717a"), 
+                                     panel.grid = element_line("transparent"), 
+                                     axis.text = element_blank()) 
+
+map_colors <- scale_fill_gradientn(colors = c("#FFBD71", "#FCA464", "#F87D7B", 
+                                              "#D04A73"),na.value = "#e1e5e8")
+
+ggplot(dat) +
+  geom_sf(aes(fill = dat$Ne_sdoh__1)) +
+  map_theme +
+  map_colors +
+  labs(title = "Ped_asthma", 
+       fill = "rate per 100,000")
+
+
+col_sp <- as(dat, "Spatial")
+col_nb <- poly2nb(col_sp) 
+col_listw <- nb2listw(col_nb, style = "B") # listw version of the neighborhood
+W <- nb2mat(col_nb, style = "B") # binary structure
+
+#spatial clustering
+moran.mc(col_sp$Ne_sdoh__1, listw = col_listw, nsim = 999, 
+         alternative = "greater") # moran's I test HOVAL
+
+
+#spatial model
+set.seed(2021)
+formula<- g1f_cnt~ ssi_snap
+m1 <- CARBayes::S.CARleroux(formula,
+                            data = dat,
+                            W = W,
+                            family = "poisson",
+                            burnin = 20000,
+                            n.sample = 100000,
+                            thin = 10)
+
+model.hoval
+
+#clustering of predictor from above model
+moran.mc(x = as.vector(model.hoval$residuals$response), 
+         listw = col_listw, 
+         nsim = 9999, 
+         alternative = "greater")
+
+#plot output from model above
+
+dat %>%
+  mutate(resid = model.hoval$residuals$response) %>%
+  ggplot(aes(fill = resid)) +
+  geom_sf() + 
+  map_theme +
+  map_colors +
+  labs(title = "Residuals from the CAR model", 
+       subtitle = "Pediatric asthma ~ predictor", 
+       fill = "Residual")
+
+
+
 
 ```
 

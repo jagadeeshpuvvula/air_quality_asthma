@@ -19,33 +19,14 @@ yq <- as.yearqtr(as.yearmon(dat$date, "%Y %m/%d/") + 1/12)
 dat$season <- factor(format(yq, "%q"), levels = 1:4,
                      labels = c("winter", "spring", "summer", "fall"))
 
-```
-
-```{r}
-#create season dummy variables (Dr. Gwon Strategy)
-dat$fall<- ifelse(dat$season=="fall",1,0)
-dat$spring<- ifelse(dat$season=="spring",1,0)
-dat$winter<-ifelse(dat$season=="winter",1,0)
-
-m1<- names(dat[8:59])
-m2<- names(dat[84:86])
-
-mixture<-c(m1,m2)
-
-mod1 = gwqs(p_ast ~ wqs,
-          stratified = "season",
-          mix_name = mixture, data = dat, q = 10,
-          validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
-          family = "negbin",
-          seed = 2021)
-
+dat.winter<- dat %>% subset(season =="winter")
+dat.spring<- dat %>% subset(season =="spring")
+dat.summer<- dat %>% subset(season =="summer")
+dat.fall<- dat %>% subset(season =="fall")
 
 ```
 
-
-```{r}
 #mixture model
-
 #Mixture of 52 air pollutants
 # 08 - Criteria pollutants
 # 17 - Tree pollen
@@ -53,25 +34,17 @@ mod1 = gwqs(p_ast ~ wqs,
 # 01 - Grass pollen
 # 01 - Unknown pollen
 # 17 - Mold
-
-mixture<- names(dat[8:59])
-
-dat.winter<- dat %>% subset(season =="winter")
-dat.spring<- dat %>% subset(season =="spring")
-dat.summer<- dat %>% subset(season =="summer")
-dat.fall<- dat %>% subset(season =="fall")
-
-
-
+# covariates: daily temperature, wind speed, wind direction
+```{r}
+mixture<- names(dat.summer[8:59])
 
 #gWQS
-m1 = gwqs(p_ast ~ wqs,
-          stratified = "season",
-          mix_name = mixture, data = dat, q = 10,
+m1 = gwqs(p_ast ~ wqs+TMAX+WDF2+WSF2,
+          mix_name = mixture, data = dat.summer, q = 10,
           validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
           family = "negbin",
           seed = 2021)
-
+```
 #Model summary: for regular model
 gwqs_summary_tab(m1)
 gwqs_scatterplot(m1)
@@ -79,21 +52,19 @@ gwqs_barplot(m1)
 summary(m1$fit)
 m1$final_weights
 
+```{r}
 #gWQS with repeated holdout
 #Suggested repeated holdout >30
-m1_rh = gwqsrh(p_ast ~ wqs,
-          stratified = "season",
+mixture<- names(dat.summer[8:59])
+m1_rh = gwqsrh(p_ast ~ wqs+TMAX+WDF2+WSF2,
           mix_name = mixture, data = dat, q = 10,
           validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
           family = "negbin",
-          seed = 2021, rh=50)
+          seed = 2021, rh=10)
 
 #Model summary: For repeated holdout
 gwqs_summary_tab(m1_rh)
 gwqsrh_boxplot(m1_rh)
 gwqs_weights_tab(m1_rh)
 summary(m1_rh$fit)
-
-
-
 ```
