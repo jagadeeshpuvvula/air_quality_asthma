@@ -46,4 +46,11 @@ corrplot(M, method="color", col=col(200),
 ```
 
 
+```{r}
+#Spatial analysis using CARbayes
+
+
+dat<- read_sf('/work/jessebell/puvvula/env_asth/env_asth_analysis.shp')
+
+```
 
