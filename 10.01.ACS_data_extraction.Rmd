@@ -17,7 +17,7 @@ library(sf)
 library(mapview)
 library(purrr)
 
-census_api_key("0d434cde378027b0c4325c402e188abc6c4b17d3")
+census_api_key("") #paste api here
 
 #get list of variables from 2019 census
 acs_variable_list<- load_variables(2019, "acs5", cache = T)
@@ -91,7 +91,20 @@ dat$sing_pent_pct <- as.numeric(dat$sing_prnt_cnt/(dat$m_pop+dat$f_pop)*100)
 dat$ssi_snap_pct<- as.numeric((dat$ssi_snap_m/dat$households)*100)
 dat$vehicle_pct<- as.numeric((dat$no_vehic_e/dat$households)*100)
 
-write.csv(dat, "ped_pctProcessed.csv")
+write.csv(dat, "ped_sdohProcessed.csv")
 
 ```
+
+Start working here
+```{r}
+library(tidyverse)
+library(skimr)
+dat<- read_csv("/work/jessebell/puvvula/ped_sdohProcessed.csv")
+
+skim(dat)
+
+```
+
+
+
 
