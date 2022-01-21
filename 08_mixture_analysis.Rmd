@@ -71,21 +71,34 @@ summary(m1_rh$fit)
 
 #sankey diagram - Change in pollutant weight by lag 
 ```{r}
-library(ggsankey)
 library(tidyverse)
+library(ggalluvial)
 
-df <- mtcars %>%
-  make_long(cyl, vs, am, gear, carb)
+data("majors")
 
-ggplot(df, aes(x = x, next_x = next_x, node = node, next_node = next_node, fill = factor(node), label = node)) +
-  geom_sankey(flow.alpha = .6,
-              node.color = "gray30") +
-  geom_sankey_label(size = 3, color = "white", fill = "gray40") +
-  scale_fill_viridis_d() +
-  theme_sankey(base_size = 18) +
-  labs(x = NULL) +
-  theme(legend.position = "none",
-        plot.title = element_text(hjust = .5)) +
-  ggtitle("Car features")
+pol_wt<- read_csv("/work/jessebell/puvvula/aqd_final_data/pollu_weight.csv")
+
+majors$curriculum <- as.factor(majors$curriculum)
+
+#semester to lag0-lag5
+#stratum to pollutant
+#alluvium to weight
+
+pol_wt$lag<- as.factor(pol_wt$lag)
+pol_wt$pollutant<- as.factor(pol_wt$pollutant)
+
+ggplot(pol_wt, aes(x = lag, stratum = pollutant,alluvium = lag),
+       fill = weight,label = pollutant)
+
+
++
+  scale_fill_brewer(type = "qual", palette = "Set2") +
+  geom_flow(stat = "alluvium", lode.guidance = "frontback",
+            color = "darkgray") +
+  geom_stratum() +
+  theme(legend.position = "bottom") +
+  ggtitle("student curricula across several semesters")
+
+
 ```
 
