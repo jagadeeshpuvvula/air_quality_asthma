@@ -8,21 +8,315 @@ output: pdf_document
 ```{r}
 library(tidyverse)
 library(lubridate)
+library(stats)
+#library(ggstatsplot)
 library(zoo)
 library(gWQS)
+#library(qgcomp)
 
-
-dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/pAsthma_imputed.csv")
-
+#pAsthma_imputed_10No
+dat<- read_csv("pasth_jan.csv")
 dat$date<- as.Date(dat$date, format = "%m/%d/%Y")
 yq <- as.yearqtr(as.yearmon(dat$date, "%Y %m/%d/") + 1/12)
 dat$season <- factor(format(yq, "%q"), levels = 1:4,
                      labels = c("winter", "spring", "summer", "fall"))
+#dat$month<- as.numeric(month(dat$date))
+#dat$year<- as.numeric(format(dat$date, '%Y'))
 
-dat.winter<- dat %>% subset(season =="winter")
-dat.spring<- dat %>% subset(season =="spring")
-dat.summer<- dat %>% subset(season =="summer")
-dat.fall<- dat %>% subset(season =="fall")
+#counting days with no ED visits
+dat %>% filter(p_ast==0) %>% group_by(season) %>% summarize(N=n())
+
+#days with non-zero values 
+colSums(dat.summer !=0)
+
+#### Quantile table
+dat %>% 
+  group_by(season)%>%
+  summarise(avg=mean(tp_09),
+            std=sd(tp_09),
+            q25 = quantile(tp_09,.25),
+            q50 = median( tp_09),
+            q75 = quantile( tp_09, .75))
+
+#############################################
+mixture<-names(dat)[8:59]
+
+dat.winter<- dat %>% subset(season=="winter")
+dat.spring<- dat %>% subset(season=="spring")
+dat.summer<- dat %>% subset(season=="summer")
+dat.fall<- dat %>% subset(season=="fall")
+
+
+
+res.all<- gwqs(p_ast ~ wqs+TMAX+PRCP+WDF2+WSF2,
+           mix_name=mixture,
+           data=dat.summer,
+           q=10, validation=0.6,b=100,b1_pos = T,b1_constr = T,
+           family="negbin", seed=2022)
+
+gwqs_summary_tab(res.all)
+gwqs_scatterplot(res.summer)
+gwqs_barplot(res.summer)
+head(res.summer$final_weights)
+
+save(res.all, file="all_season.rda")
+load("all_season.rda")
+
+#beta and std err
+#winter(n=347): 0.113 (0.14); p=0.42
+#spring(n=367): 0.234 (0.12); p=0.056
+#summer(n=368): 1.157 (0.25); p=4.23 e-06 **
+#fall(n=360)  : 0.062 (0.08); p=0.43
+
+#gWQS repeated holdout
+adj.lag1.spring.rh<- gwqsrh(p_ast_l5 ~ wqs+TMAX+PRCP+WDF2+WSF2,
+                    mix_name=mixture,
+                    data=dat.spring,
+                    q=10, validation=0.6,b=100,b1_pos = T,b1_constr = T,
+                    family="negbin", seed=2022,rh=100)
+
+save(adj.lag5.winter.rh, file="winter.adj.lag5.rh.rda")
+
+# load model results from "mixture_res" folder
+load("mixture_res//winter.adj.lag1.rh.rda")
+
+gwqs_summary_tab(adj.lag5.winter.rh)
+gwqsrh_boxplot(adj.lag5.summer.rh, tau = 0.01)
+gwqs_weights_tab(crude.winter.rh)
+summary(res.summer.rh)
+
+
+#sum of total weights
+sum(adj.lag1.winter.rh$final_weights$Estimate)
+
+#########################################
+# Figure 1
+#########################################
+library(tidyverse)
+dat<- read_csv("mixture_res.csv")
+
+dat$Season<- factor(dat$Season, levels = c("winter",
+                                         "spring",
+                                         "summer",
+                                         "fall"))
+
+dat$lag<-factor(dat$lag, levels = c("L0-C","L0","L1","L2","L3","L4", "L5"))
+
+cbbPalette <- c("#D55E00", "#0072B2")
+
+ggplot(dat, aes(x = as.factor(lag), y = estimate, ymin = ll, ymax = ul,
+                linetype=Model)) + 
+  geom_pointrange(aes(col = sign), 
+                  position=position_dodge(width=0.5),size = 0.5) +
+  ylab(expression(paste(beta[WQS]," - air pollutant mixture [95% CI]"))) +
+  scale_y_continuous(breaks = seq(-0.2, 1.6, 0.2),limits=c(-0.2, 1.6))+
+  geom_hline(aes(yintercept = 0), linetype="dashed") + 
+  scale_colour_manual(values=cbbPalette) + 
+  ggtitle("")+
+  xlab("")+
+  theme_bw()+
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "black"),
+        plot.title = element_text(hjust = 0.5),
+        text=element_text(size=12,  family="Arial Black"),
+        axis.text.y = element_text(size = 12, family="Arial Black"),
+        axis.title.y = element_text(size = 12, family = "Arial Black"),
+        legend.text.align = 0,
+        strip.text=element_text(size=12, face="bold",family="Arial Black"),
+        strip.placement = "outside",
+        axis.ticks.x = element_blank(),
+        legend.position = "None")+
+  facet_grid(.~Season, scales = "free", switch = "x", space = "free_x")+
+  guides(color=guide_legend(override.aes = list(shape=15, size=2)))
+
+ggsave("mixture_effect.tiff",width = 10,height = 4)
+
+########### Extra code #############
+
+#Remove axis text
+axis.text.x=element_blank()
+
+#Legend placement
+legend.box.just = "right",
+legend.spacing = unit(0, "cm"),
+legend.position = c(0.90,0.95),
+legend.box = "vertical",
+legend.direction = "horizontal",
+legend.text = element_text(size = 12),
+legend.key = element_blank(),
+
+#############################################
+
+
+#########################################
+# Figure 2
+#########################################
+library(tidyverse)
+library(ggbump)
+library(cowplot)
+
+dat<- read_csv("poll_wt.csv")
+
+dat$season<- factor(dat$season, levels = c("winter","spring",
+                                           "summer","fall"))
+
+dat.sum<- dat %>% filter(season == "summer", rank<=3)
+
+ggplot(dat.sum, aes(lag,rank,color=pollutant)) +
+  geom_point(size = 8) +
+  geom_text(data = dat.sum %>% filter(lag == min(lag)),
+            aes(x = lag - .1, label = pollutant), size = 4, hjust = 1) +
+  geom_text(data = dat.sum %>% filter(lag == max(lag)),
+            aes(x = lag + .1, label = pollutant), size = 4, hjust = 0) +
+  geom_bump(size = 3, smooth = 8) +
+  #scale_x_continuous(limits = c(-1, 6),breaks = seq(0, 5, 1)) +
+  scale_y_reverse(breaks=seq(1,5,1))+
+  labs(y = "Weight",x = "Lag") +
+  theme_minimal_grid(font_size = 12, line_size = 0) +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        panel.grid.major = element_blank(),)+
+  guides(color=guide_legend(nrow=1))
+
+#+
+  #facet_grid(season~., scales = "free", switch = "x", space = "free_x")
+  #guides(color=guide_legend(override.aes = list(shape=15, size=2)))
+#############################################
+#############################################
+#############################################
+#Figure 2 pollutant weight - ballon plot
+
+dat<- read_csv("mix_wt.csv")
+
+dat <- dat %>% mutate(quantile= ntile(wt_pct,4))
+
+#for quantile scale
+dat %>% 
+  group_by(quantile)%>%
+  summarise(low=min(wt_pct), high=max(wt_pct))
+
+dat$category <- factor(dat$category, 
+                      levels=c("Criteria pollutant", "Tree pollen", 
+                               "Weed pollen", "Other pollen", "Mold"))
+
+dat$season <- factor(dat$season, 
+                       levels=c("winter", "spring","summer", "fall"))
+
+ggplot(dat, aes(x=lag, y = pollutant))+
+  geom_point(aes(size=factor(quantile), color=factor(sig)),shape=15)+
+  scale_size_discrete(name="Mean weight (%)",
+                      labels=c("3.47-5.17","5.18-6.14",
+                               "6.15-9.41","9.42-25.60"))+
+  scale_color_manual(values = c("0"="grey",
+                                "1"="black"))+
+  labs(y = "",
+       x = "") +
+  facet_grid(category~season, scales = "free", switch = "x", space = "free",
+             labeller = label_wrap_gen(width = 10))+
+  theme(panel.background=element_blank(),
+        strip.background = element_rect(fill = "gray94"),
+        strip.text = element_text(size = 11, colour = "black"),
+        panel.border = element_rect(colour = "grey", fill=NA, size=0.5),
+        legend.position='bottom',
+        axis.line = element_line(colour = "grey"),
+        text=element_text(size=12, family = "Helvetica"),
+        axis.text=element_text(size=12, colour = "black", family = "Helvetica"),
+        axis.title=element_text(size=12, colour = "black", family = "Helvetica"),
+        plot.title=element_text(size=12, colour = "black", family = "Helvetica"),
+        legend.text=element_text(size=12, colour = "black", family = "Helvetica"))+
+  guides(color=FALSE)
+
+ggsave("pollutant_weight.tiff",width = 14,height = 10,
+       dpi=300)
+
+#############################################
+#############################################
+
+#Supplement figure 1. Rate of asthma exacerbation
+
+dat<- read_csv("ast_rate_sup.csv")
+
+dat$age_grp <- factor(dat$age_grp, 
+                        levels=c("Under 5 years", "5 - 9 years", 
+                                 "10 - 14 years", "15 - 19 years"))
+
+ggplot(dat, aes(x=year, y=rate_p10k))+
+  geom_line(aes(color=factor(gender)))+
+  geom_point(aes(color=factor(gender)))+
+  facet_grid(.~age_grp, scales = "free", switch = "x", space = "free_x")+
+  labs(y = "Rate of pediatric asthma exacerbations per 10,000 children",
+       x = "year") +
+  theme_bw()+ theme(panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank(), 
+                    axis.line = element_line(colour = "black"))+
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    legend.position='bottom',
+    axis.line = element_line(colour = "black"),
+    text=element_text(size=12, family = "Helvetica"),
+    axis.text=element_text(size=10, family = "Helvetica"),
+    axis.title=element_text(size=12, family = "Helvetica"),
+    plot.title=element_text(size=12, family = "Helvetica"),
+    legend.text=element_text(size=12, family = "Helvetica"),
+    legend.title=element_blank())
+
+ggsave("rate_age_gend.tiff",width = 10,height = 6)
+
+#############################################
+#############################################
+# Supplement 2 - Seasonal trend of air pollutants
+
+dat<- read_csv("pollu_trend.csv")
+dat$season<- as.factor(dat$season)
+dat$week<- as.factor(dat$week)
+
+dat_summer <- dat %>% filter(season=="Summer")
+
+ggplot(dat_summer, aes(x=week, y=value, colour=factor(year)))+
+  geom_line()+
+  facet_grid(pollutant~.) + scale_x_continuous(breaks = 1)
+
++
+  theme_bw()+ theme(panel.grid.major = element_blank(),
+                    panel.grid.minor = element_blank(), 
+                    axis.line = element_line(colour = "black"))+
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+    legend.position='bottom',
+    axis.line = element_line(colour = "black"),
+    text=element_text(size=12, family = "Helvetica"),
+    axis.text=element_text(size=10, family = "Helvetica"),
+    axis.title=element_text(size=12, family = "Helvetica"),
+    plot.title=element_text(size=12, family = "Helvetica"),
+    legend.text=element_text(size=12, family = "Helvetica"),
+    legend.title=element_blank())
+
+
+#############################################
+#############################################
+
+#qgcomp attempt
+#Ref:https://cran.r-project.org/web/packages/qgcomp/vignettes/qgcomp-vignette.html
+
+dat.summer$mld_10
+Xnm<-names(dat.summer)[8:40] #mixture
+
+qgfit<- qgcomp.noboot(p_ast~.,
+                    expnms=Xnm,
+                    dat=dat.summer[,c('p_ast',Xnm)],
+                    family=poisson(),
+                    bayes = T,
+                    q=4)
+qgfit
+plot(qgfit)
+
+p=plot(qgfit)
+
+plot(qgfit, pointwiseref = 3)
+pointwisebound.boot(qgfit, pointwiseref=3)
+
 
 ```
 
@@ -35,70 +329,3 @@ dat.fall<- dat %>% subset(season =="fall")
 # 01 - Unknown pollen
 # 17 - Mold
 # covariates: daily temperature, wind speed, wind direction
-```{r}
-mixture<- names(dat.summer[8:59])
-
-#gWQS
-m1 = gwqs(p_ast ~ wqs+TMAX+WDF2+WSF2,
-          mix_name = mixture, data = dat.summer, q = 10,
-          validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
-          family = "negbin",
-          seed = 2021)
-```
-#Model summary: for regular model
-gwqs_summary_tab(m1)
-gwqs_scatterplot(m1)
-gwqs_barplot(m1)
-summary(m1$fit)
-m1$final_weights
-
-```{r}
-#gWQS with repeated holdout
-#Suggested repeated holdout >30
-mixture<- names(dat.summer[8:59])
-m1_rh = gwqsrh(p_ast ~ wqs+TMAX+WDF2+WSF2,
-          mix_name = mixture, data = dat, q = 10,
-          validation = 0.8, b = 100, b1_pos = TRUE, b1_constr = TRUE,
-          family = "negbin",
-          seed = 2021, rh=10)
-
-#Model summary: For repeated holdout
-gwqs_summary_tab(m1_rh)
-gwqsrh_boxplot(m1_rh)
-gwqs_weights_tab(m1_rh)
-summary(m1_rh$fit)
-```
-
-#sankey diagram - Change in pollutant weight by lag 
-```{r}
-library(tidyverse)
-library(ggalluvial)
-
-data("majors")
-
-pol_wt<- read_csv("/work/jessebell/puvvula/aqd_final_data/pollu_weight.csv")
-
-majors$curriculum <- as.factor(majors$curriculum)
-
-#semester to lag0-lag5
-#stratum to pollutant
-#alluvium to weight
-
-pol_wt$lag<- as.factor(pol_wt$lag)
-pol_wt$pollutant<- as.factor(pol_wt$pollutant)
-
-ggplot(pol_wt, aes(x = lag, stratum = pollutant,alluvium = lag),
-       fill = weight,label = pollutant)
-
-
-+
-  scale_fill_brewer(type = "qual", palette = "Set2") +
-  geom_flow(stat = "alluvium", lode.guidance = "frontback",
-            color = "darkgray") +
-  geom_stratum() +
-  theme(legend.position = "bottom") +
-  ggtitle("student curricula across several semesters")
-
-
-```
-
