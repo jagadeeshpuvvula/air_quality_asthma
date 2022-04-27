@@ -49,50 +49,87 @@ library(splines)
 library(tsModel)
 library(dlnm)
 library(mgcv)
-library(ggstatsplot)
-
+library(ggpubr)
 
 dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/p_burn_asth.csv")
 dat$month<-as.factor(dat$month)
 dat$wDay<-as.factor(dat$wDay)
 dat$dow<-as.factor(dat$dow)
+dat$pres_burn<- as.factor(dat$pres_burn)
+dat$year<- as.factor(dat$year)
 
 #Excluding pollen dominant months
-filter_month<- c("Jan","Feb","Mar","Apr")
+filter_month<- c("Jan","Feb","Mar","Apr","May")
 df<- subset(dat, month %in% filter_month)
 ```
 
 ```{r}
-set.seed(2021)
-#group mean difference testing : Burn and non-burn season
+#Pedatric asthma ED visits - differences
+df %>% group_by(year,pres_burn) %>%
+  summarise(days=n(),
+            total=sum(p_ast),
+            avg=mean(p_ast),
+            sd=sd(p_ast))
+ggboxplot(df,x="pres_burn", y="p_ast",
+          color = "pres_burn",
+          ylab = "Number of asthma ED visits", xlab = "Prescribed burn")
 
-# Asthma exacerbations
-ggbetweenstats(df,pres_burn,p_ast)
-#Observed significantly greater ER visits during burn season (b=3.14 > nb=1.93 )
+#two sided t-test
+df1<-df %>% filter(year=="2019")
+t.test(p_ast~pres_burn, data=df1)
 
-#PM10
-ggbetweenstats(dat,pres_burn,cp_07)
-#Significantly difference (b=26.65 >nb=17.40)
+##########################################
+##########################################
+#PM differences - differences
+df %>% group_by(year,pres_burn) %>%
+  summarise(days=n(),
+            med=median(cp_07),
+            avg=mean(cp_07),
+            sd=sd(cp_07))
 
-#PM2.5
-ggbetweenstats(dat,pres_burn,cp_08)
-#Non-significantly difference (b=17.34 ~ nb=17.28)
+ggboxplot(df,x="pres_burn", y="p_ast",
+          color = "pres_burn",
+          ylab = "Number of asthma ED visits", xlab = "Prescribed burn")
+
+#two sided t-test
+df1<-df %>% filter(year=="2019")
+t.test(cp_07~pres_burn, data=df1)
 ```
 
-Correlation between PM and ped asthma
-PM10 - lag 0 -    6.37
-PM10 - lag 1 -    9.17
-PM10 - lag 2 -    5.33
-PM10 - lag 3 -    10.48
-PM10 - lag 4 -    9.50
-PM10 - lag 5 -    7.20
+```{r}
+#Spearman-Rho correlations Ped-asthma and criteria pollutants col3-16
+library(corrplot)
+df_cor<- df[c(3:16)]
 
-PM2.5 - lag 0 -     -0.39
-PM2.5 - lag 1 -     -0.39
-PM2.5 - lag 2 -     -0.48
-PM2.5 - lag 3 -     0.76
-PM2.5 - lag 4 -     -0.57
-PM2.5 - lag 5 -     -5.24
+M<-cor(df_cor, method = "spearman", use = "complete.obs")
+cor.mtest <- function(mat, ...) {
+  mat <- as.matrix(mat)
+  n <- ncol(mat)
+  p.mat<- matrix(NA, n, n)
+  diag(p.mat) <- 0
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      tmp <- cor.test(mat[, i], mat[, j], ...)
+      p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+    }
+  }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+
+p.mat <- cor.mtest(df_cor)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+cor_plt<-corrplot(M, method="color", col=col(200),  
+         type="upper", order="original",
+         tl.col="black", tl.srt=90, cl.cex = 1, tl.cex = 0.7, #Text label color and rotation
+         # Combine with significance
+         p.mat = p.mat, sig.level = 0.01, insig = "blank", 
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE)
+
+```
+
 
 ```{r}
 #Start modeling with PM10 and pediatric asthma
@@ -105,14 +142,35 @@ library(mda)
 library(lattice)
 library(MASS)
 
-df.nburn<- df %>% subset(pres_burn=="0")
-df.burn<- df %>% subset(pres_burn=="1")
+dat<- read_csv("/work/jessebell/puvvula/aqd_final_data/p_burn_asth.csv")
+dat$month<-as.factor(dat$month)
+dat$wDay<-as.factor(dat$wDay)
+dat$dow<-as.factor(dat$dow)
+dat$pres_burn<- as.factor(dat$pres_burn)
+dat$year<- as.factor(dat$year)
+dat$popln<- as.numeric(160554)
 
-fit.burn<- glm.nb(p_ast ~ Lag(cp_07, 0:5)+TMAX,data = df.burn)
-summary(fit.burn)
+#Excluding pollen dominant months
+filter_month<- c("Jan","Feb","Mar","Apr","May")
+df<- subset(dat, month %in% filter_month)
 
-#DLNM
+#subset by year |||| PRESCRIBED BURNS AS BINARY VARIABLE
+dat.m1<- df%>% filter(year=="2019")
 
+m1<-glm.nb(p_ast~as.factor(pres_burn)+offset(log(popln)),data = dat.m1)
+(est <- cbind(Estimate = coef(m1), confint(m1)))
+exp(est)
+
+#ASSOCIATION B/W PM10 and PED. ASTHMA
+dat.m2<- df %>% subset(pres_burn=="1" & year=="2016")
+
+m2<-glm.nb(p_ast ~ cp_07+TMAX+month +offset(log(popln)),data = dat.m2)
+(est <- cbind(Estimate = coef(m2), confint(m2)))
+exp(est)
+
+#other
+df.burn<- df %>% subset(pres_burn=="1" & year=="2016")
 
 ```
+
 
