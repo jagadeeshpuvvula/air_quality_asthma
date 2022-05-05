@@ -157,19 +157,30 @@ df<- subset(dat, month %in% filter_month)
 #subset by year |||| PRESCRIBED BURNS AS BINARY VARIABLE
 dat.m1<- df%>% filter(year=="2019")
 
+#presribed burn yes or no and pediatric asthma
 m1<-glm.nb(p_ast~as.factor(pres_burn)+offset(log(popln)),data = dat.m1)
 (est <- cbind(Estimate = coef(m1), confint(m1)))
 exp(est)
 
-#ASSOCIATION B/W PM10 and PED. ASTHMA
-dat.m2<- df %>% subset(pres_burn=="1" & year=="2016")
-
-m2<-glm.nb(p_ast ~ cp_07+TMAX+month +offset(log(popln)),data = dat.m2)
-(est <- cbind(Estimate = coef(m2), confint(m2)))
+#interaction between pm10 and prescribed burns
+m1<-glm.nb(p_ast~as.factor(pres_burn):cp_07+offset(log(popln)),data = dat.m1)
+(est <- cbind(Estimate = coef(m1), confint(m1)))
 exp(est)
 
-#other
-df.burn<- df %>% subset(pres_burn=="1" & year=="2016")
+# moving to GAM
+library(mgcv)
+mod.gam<- gam(p_ast ~ as.factor(pres_burn):cp_07,
+         family=nb(link = log),
+         method = "GCV.Cp",
+         data=dat.m1) 
+
+summary(mod.gam)
+#deviance explained is 3.5%
+
+##########################################################################
+##########################################################################
+#dlnm
+
 
 ```
 
