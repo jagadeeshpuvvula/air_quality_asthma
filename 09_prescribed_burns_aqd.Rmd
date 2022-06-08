@@ -69,14 +69,18 @@ df %>% group_by(year,pres_burn) %>%
   summarise(days=n(),
             total=sum(p_ast),
             avg=mean(p_ast),
-            sd=sd(p_ast))
+            sd=sd(p_ast),
+            median = median(p_ast, na.rm = TRUE),
+            IQR = IQR(p_ast, na.rm = TRUE))
 ggboxplot(df,x="pres_burn", y="p_ast",
           color = "pres_burn",
           ylab = "Number of asthma ED visits", xlab = "Prescribed burn")
 
-#two sided t-test
+#Mean differences 
 df1<-df %>% filter(year=="2019")
-t.test(p_ast~pres_burn, data=df1)
+#t.test(p_ast~pres_burn, data=df1) #not using
+
+wilcox.test(p_ast~pres_burn, alternative = "two.sided", data=df1)
 
 ##########################################
 ##########################################
@@ -93,7 +97,10 @@ ggboxplot(df,x="pres_burn", y="p_ast",
 
 #two sided t-test
 df1<-df %>% filter(year=="2019")
-t.test(cp_07~pres_burn, data=df1)
+#t.test(cp_07~pres_burn, data=df1) #switch to two sided wilcoxon test
+
+wilcox.test(cp_07~pres_burn, alternative = "two.sided", data=df1)
+
 ```
 
 ```{r}
@@ -153,6 +160,7 @@ dat$popln<- as.numeric(160554)
 #Excluding pollen dominant months
 filter_month<- c("Jan","Feb","Mar","Apr","May")
 df<- subset(dat, month %in% filter_month)
+
 
 #subset by year |||| PRESCRIBED BURNS AS BINARY VARIABLE
 dat.m1<- df%>% filter(year=="2019")
