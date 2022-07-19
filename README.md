@@ -1,9 +1,6 @@
-# air_quality_asthma
-Evaluating association between outdoor air quality and pediatric asthma exacerbations 
+Code to reproduce results from the article
 
-Jan 01, 2016 - Dec 31, 2019
-
-1442/1460 days were included in this study over 4 years
+Joint association between air pollutant mixture and pediatric asthma exacerbations - Accepted for publication - Environmental Epidemiology
 
 
 Cite: [![DOI](https://zenodo.org/badge/414319766.svg)](https://zenodo.org/badge/latestdoi/414319766)
